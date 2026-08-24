@@ -47,7 +47,27 @@ content-type: application/json
 {"id":1,"title":"Buy milk","done":false}
 ```
 
-*(Replace the block above with a real `curl -i` output from your own terminal before submitting.)*
+## Notes
+
+- **SQLite storage**: tasks now persist in `tasks.db`, a single SQLite file created automatically on first run.
+  Why SQLite: zero setup, no separate server process, and the whole database is one file — perfect for a project this size.
+- **Where the database lives**: `tasks.db` in the project root. It's git-ignored, so each clone starts fresh —
+  the app creates the file and table automatically, and seeds 3 example tasks only if the table is empty.
+- **Validation**: POST and PUT still reject a missing or empty title with a 400 error and a JSON message explaining why.
+- **Parameterized queries**: all SQL uses `?` placeholders with values passed separately, never string-glued —
+  this prevents SQL injection.
+
+## Database screenshot
+
+<img width="959" height="500" alt="db-browser" src="https://github.com/user-attachments/assets/7ed2328c-a7d0-46f4-866c-8d205c3d0726" />
+
+
+## Example SQL query
+
+```sql
+SELECT * FROM tasks WHERE done = 1;
+```
+Returned all tasks marked completed — used to check the "done" filter manually before trusting the API's behavior.
 
 ## Swagger UI
 
