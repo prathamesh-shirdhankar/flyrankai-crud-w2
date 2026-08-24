@@ -36,6 +36,21 @@ Then open **http://localhost:8000** in your browser, or **http://localhost:8000/
 { "id": 1, "title": "Buy milk", "done": false }
 ```
 
+## How to run it
+
+Requirements: Python 3.10+
+
+git clone https://github.com/YOUR_USERNAME/crud-api.git
+cd crud-api
+py -m venv venv
+venv\Scripts\activate
+pip install fastapi uvicorn
+uvicorn main:app --reload --port 8000
+
+`tasks.db` is created automatically on first run, with 3 seeded example tasks.
+
+Then open http://localhost:8000 in your browser, or http://localhost:8000/docs for the interactive Swagger UI.
+
 ## Example — curl
 
 ```
