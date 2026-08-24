@@ -1,8 +1,12 @@
 from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel
+from database import init_db, get_connection
 
 app = FastAPI()
 
+init_db()  # creates tasks.db and the table if they don't exist yet
+
+# still used by PUT/DELETE until Stage 3 migrates them too
 tasks = [
     {"id": 1, "title": "Buy milk", "done": False},
     {"id": 2, "title": "Walk the dog", "done": False},
@@ -26,23 +30,36 @@ def health():
 
 @app.get("/tasks")
 def get_tasks():
-    return tasks
+    conn = get_connection()
+    rows = conn.execute("SELECT * FROM tasks").fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
 
 @app.get("/tasks/{task_id}")
 def get_task(task_id: int):
-    for t in tasks:
-        if t["id"] == task_id:
-            return t
-    raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    return dict(row)
 
 @app.post("/tasks", status_code=201)
 def create_task(task: TaskCreate):
     if not task.title or not task.title.strip():
         raise HTTPException(status_code=400, detail="title is required")
-    new_id = max((t["id"] for t in tasks), default=0) + 1
-    new_task = {"id": new_id, "title": task.title, "done": False}
-    tasks.append(new_task)
-    return new_task
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO tasks (title, done) VALUES (?, ?)",
+        (task.title, False),
+    )
+    conn.commit()
+    new_id = cursor.lastrowid
+    row = conn.execute("SELECT * FROM tasks WHERE id = ?", (new_id,)).fetchone()
+    conn.close()
+    return dict(row)
 
 @app.put("/tasks/{task_id}")
 def update_task(task_id: int, update: TaskUpdate):
